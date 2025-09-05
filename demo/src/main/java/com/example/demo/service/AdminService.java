@@ -93,7 +93,9 @@ public class AdminService {
 
     public List<User> getEmployeesWithDueTasks() {
         Map<Long, List<Task>> map = getDueTasksByUserId();
-        if (map.isEmpty()) return Collections.emptyList();
+        if (map.isEmpty())
+            return Collections.emptyList();
+
         return userRepository.findAllById(map.keySet());
     }
 
