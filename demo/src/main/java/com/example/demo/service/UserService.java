@@ -18,30 +18,31 @@ public class UserService {
     @Autowired
     private TaskRepository taskRepository;
 
-    // Login
+    // -------- LOGIN --------
     public User login(String username, String password) {
         return userRepository.findByUsernameAndPassword(username, password);
     }
 
-    // Register & Update User
+    // -------- REGISTER & UPDATE USER --------
     public void saveUser(User user) {
         userRepository.save(user);
     }
 
-    // Task Operations
+    // -------- SAVE OR UPDATE TASK --------
+    public void saveTask(Task task) {
+        taskRepository.save(task);
+    }
+
+    // -------- TASK OPERATIONS --------
     public List<Task> getTasksByUserId(Long userId) {
         return taskRepository.findByUserId(userId);
     }
 
     public Task getTaskById(Long taskId) {
-
         return taskRepository.findById(taskId).orElse(null);
     }
 
     public User findUserById(Long userId) {
         return userRepository.findById(userId).orElse(null);
     }
-
-
-
 }

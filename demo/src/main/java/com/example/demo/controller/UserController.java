@@ -38,10 +38,10 @@ public class UserController {
         model.addAttribute("user", new User());
         return "login"; // login.jsp
     }
+
     @PostMapping("/login")
     public String loginUser(@ModelAttribute("user") User user, Model model, HttpSession session) {
-
-        // 🔹 First check in admin table
+        // First check in admin table
         Admin admin = adminRepository.findByUsernameAndPassword(user.getUsername(), user.getPassword());
         if (admin != null) {
             session.setAttribute("admin", true);
@@ -50,33 +50,30 @@ public class UserController {
             return "redirect:/admin";
         }
 
-        //  If not admin, then check normal user
+        // If not admin, then check normal user
         User validUser = userService.login(user.getUsername(), user.getPassword());
         if (validUser != null) {
             validUser.setInTime(LocalDateTime.now());
             userService.saveUser(validUser);
 
             List<Task> tasks = userService.getTasksByUserId(validUser.getId());
-
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
             String inTime = validUser.getInTime() != null ? validUser.getInTime().format(formatter) : "--:--";
             String outTime = validUser.getOutTime() != null ? validUser.getOutTime().format(formatter) : "--:--";
 
             session.setAttribute("userId", validUser.getId());
-
             model.addAttribute("name", validUser.getUsername());
             model.addAttribute("tasks", tasks);
             model.addAttribute("inTime", inTime);
             model.addAttribute("outTime", outTime);
             model.addAttribute("taskCount", tasks.size());
 
-            return "task";
+            return "task"; // employee task.jsp
         } else {
             model.addAttribute("error", "Invalid Username or Password!");
             return "login";
         }
     }
-
 
     // ---------------- LOGOUT METHOD ----------------
     @GetMapping("/logout")
@@ -97,6 +94,7 @@ public class UserController {
                 userService.saveUser(user);
             }
         }
+
         session.invalidate(); // destroy session
         return "redirect:/login";
     }
@@ -109,9 +107,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String registerUser(@Valid @ModelAttribute("user") User user,
-                               BindingResult result,
-                               Model model) {
+    public String registerUser(@Valid @ModelAttribute("user") User user, BindingResult result, Model model) {
         if (result.hasErrors()) {
             model.addAttribute("error", result.getFieldError("password").getDefaultMessage());
             return "register";
@@ -126,7 +122,7 @@ public class UserController {
         return "redirect:/login"; // after register → login
     }
 
-    // ---------------- TASK PAGE METHODS ----------------
+    // ---------------- TASK PAGE (Employee) ----------------
     @GetMapping("/tasks")
     public String showTasks(HttpSession session, Model model) {
         Long userId = (Long) session.getAttribute("userId");
@@ -134,7 +130,6 @@ public class UserController {
 
         User user = userService.findUserById(userId);
         List<Task> tasks = userService.getTasksByUserId(userId);
-
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
         String inTime = user.getInTime() != null ? user.getInTime().format(formatter) : "--:--";
         String outTime = user.getOutTime() != null ? user.getOutTime().format(formatter) : "--:--";
@@ -145,7 +140,21 @@ public class UserController {
         model.addAttribute("outTime", outTime);
         model.addAttribute("taskCount", tasks.size());
 
-        return "task"; // task.jsp
+        return "task"; // employee task.jsp
     }
 
+    // ---------------- ACCEPT TASK (Employee) ----------------
+    @PostMapping("/tasks/accept")
+    public String acceptTask(@RequestParam Long taskId, HttpSession session) {
+        Long userId = (Long) session.getAttribute("userId");
+        if (userId == null) return "redirect:/login";
+
+        Task task = userService.getTaskById(taskId);
+        if (task != null && "Not Started".equals(task.getStatus())) {
+            task.setStatus("In Progress"); // goes to admin dashboard
+            userService.saveTask(task);
+        }
+
+        return "redirect:/tasks";
+    }
 }
