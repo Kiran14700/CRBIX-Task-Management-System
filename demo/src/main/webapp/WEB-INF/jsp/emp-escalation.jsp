@@ -2,11 +2,11 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Task Dashboard</title>
+    <title>Employee Escalation</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet"/>
-    <link rel="stylesheet" type="text/css" href="<c:url value='/css/task.css'/>"/>
+    <link rel="stylesheet" type="text/css" href="<c:url value='/css/emp-escalation.css'/>"/>
 </head>
 <body>
     <!-- Header -->
@@ -14,40 +14,8 @@
         <div class="logo">
             <img class="img" src="${pageContext.request.contextPath}/img/CRBIXLOGO.png" alt="Logo">
         </div>
-        <div class="logout" onclick="window.location='${pageContext.request.contextPath}/logout'">
-            <p>LogOut</p>
-        </div>
+
     </header>
-
-<!-- Toast Notification Container -->
-<!-- Toast Notification Container -->
-<div id="toast-container">
-    <c:set var="shown" value="false" />
-    <c:forEach var="task" items="${tasks}">
-        <c:if test="${task.status == 'Not Started' && !shown}">
-
-            <div class="toast-notification">
-                <p>
-                    <strong>New Task Pending:</strong> ${task.title} <br/>
-                    <small>Assigned By: ${task.assignedBy != null ? task.assignedBy.username : 'Admin'}</small>
-                </p>
-                <span class="toast-close" onclick="closeToast(this)">×</span>
-                <form method="post" action="${pageContext.request.contextPath}/tasks/accept" style="display:inline;">
-                    <input type="hidden" name="taskId" value="${task.id}">
-         ``           <button type="submit" class="accept-toast">Accept</button>
-                </form>
-            </div>
-
-            <c:set var="shown" value="true"/>
-        </c:if>
-    </c:forEach>
-</div>
-
-
-
-
-
-
 
     <!-- Main Layout -->
     <div class="main-layout">
@@ -65,46 +33,62 @@
         </div>
 
         <!-- Right Panel -->
-        <div class="right-panel">
-            <div class="filters">
-                <select><option>Filter 1</option></select>
-                <select><option>Filter 2</option></select>
-                <select><option>Filter 3</option></select>
+        <div class="right-panel escalation-panel">
+
+
+            <div class="column">
+
+                <h3 class="column-title">Due Tasks</h3>
+                <div class="task-list">
+                    <c:forEach var="task" items="${dueTasks}">
+                        <div class="task-card priority-p${task.priority}"
+                             onclick="openModal(this)"
+                             data-id="${task.id}"
+                             data-title="${task.title}"
+                             data-summary="${task.summary}"
+                             data-description="${task.description}"
+                             data-priority="${task.priority}"
+                             data-assignedby="${task.assignedBy != null ? task.assignedBy.username : 'Admin'}"
+                             data-duedate="${task.dueDate != null ? task.dueDate : 'No Deadline'}"
+                             data-status="${task.status}">
+                            <p><strong>${task.title}</strong></p>
+                            <span class="badge">${task.status}</span>
+                        </div>
+                    </c:forEach>
+                    <c:if test="${empty dueTasks}">
+                        <div class="no-task">No due tasks</div>
+                    </c:if>
+                </div>
             </div>
 
-            <!-- Tasks Container -->
-            <div class="tasks">
-                <c:forEach var="task" items="${tasks}" varStatus="status">
-                    <div class="task-card priority-p${task.priority}"
-                         onclick="openModal(this)"
-                         data-id="${task.id}"
-                         data-title="${task.title}"
-                         data-summary="${task.summary}"
-                         data-description="${task.description}"
-                         data-priority="${task.priority}"
-                         data-assignedby="${task.assignedBy != null ? task.assignedBy.username : 'Admin'}"
-                         data-duedate="${task.dueDate != null ? task.dueDate : 'No Deadline'}"
-                         data-status="${task.status}">
-                        <p>Task ${status.index + 1}</p>
-                        <p><strong>${task.title}</strong></p>
-                        <p>Priority:
-                            <c:choose>
-                                <c:when test="${task.priority == 1}">Critical</c:when>
-                                <c:when test="${task.priority == 2}">High</c:when>
-                                <c:when test="${task.priority == 3}">Medium</c:when>
-                                <c:when test="${task.priority == 4}">Low</c:when>
-                                <c:when test="${task.priority == 5}">Optional/Backlog</c:when>
-                                <c:otherwise>Unknown</c:otherwise>
-                            </c:choose>
-                        </p>
-                    </div>
-                </c:forEach>
+            <div class="column">
+                <h3 class="column-title">Escalated Tasks</h3>
+                <div class="task-list">
+                    <c:forEach var="task" items="${escalatedTasks}">
+                        <div class="task-card priority-p${task.priority}"
+                             onclick="openModal(this)"
+                             data-id="${task.id}"
+                             data-title="${task.title}"
+                             data-summary="${task.summary}"
+                             data-description="${task.description}"
+                             data-priority="${task.priority}"
+                             data-assignedby="${task.assignedBy != null ? task.assignedBy.username : 'Admin'}"
+                             data-duedate="${task.dueDate != null ? task.dueDate : 'No Deadline'}"
+                             data-status="${task.status}">
+                            <p><strong>${task.title}</strong></p>
+                            <span class="badge">${task.status}</span>
+                        </div>
+                    </c:forEach>
+                    <c:if test="${empty escalatedTasks}">
+                        <div class="no-task">No escalated tasks</div>
+                    </c:if>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Escalation Button -->
-    <a href="${pageContext.request.contextPath}/emp/escalation" class="escalation-btn">View Escalations</a>
+    <!-- Back Button -->
+    <a href="${pageContext.request.contextPath}/tasks" class="back-btn">Back to Dashboard</a>
 
     <!-- Task Modal -->
     <div id="modal" class="modal-overlay">
@@ -125,7 +109,7 @@
     </div>
 
     <script>
-        // Open modal function
+        // Open modal function (same as task.jsp)
         function openModal(card){
             document.getElementById('modal').style.display = 'flex';
             document.getElementById('modalTitle').innerText = card.getAttribute('data-title');
@@ -152,14 +136,6 @@
         function closeModal(){
             document.getElementById('modal').style.display = 'none';
         }
-
-            function closeToast(span){
-                const toast = span.parentElement;
-                toast.remove();
-                // Optional: reload the page to show next not-started task
-                location.reload();
-            }
-
     </script>
 </body>
 </html>
